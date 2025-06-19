@@ -9,8 +9,8 @@
         <version>3.2.4</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>io.github.vishalmysore</groupId>
-    <artifactId>springactions</artifactId>
+    <groupId>vishalmysore.a2a</groupId>
+    <artifactId>a2aClient</artifactId>
     <version>0.2.3</version>
 
     <properties>
