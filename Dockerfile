@@ -7,7 +7,7 @@ WORKDIR /ai
 ARG VERSION=0.2.3
 
 # Download the JAR file using curl with the version variable
-RUN curl -L -o /ai/mcpdemo.jar https://github.com/vishalmysore/a2aClient/releases/download/release/a2aClient-${VERSION}.jar
+RUN curl -L -o /ai/mcpdemo.jar https://github.com/vishalmysore/a2aClient/releases/download/hugginface/a2aClient-${VERSION}.jar
 
 # Expose the port
 EXPOSE 7860
