@@ -1,0 +1,1 @@
+window.SSE_SOURCE = new EventSource("/sse/stream");

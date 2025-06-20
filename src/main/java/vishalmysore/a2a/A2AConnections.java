@@ -44,6 +44,11 @@ public class A2AConnections {
                 .toArray(String[]::new);
     }
 
+    public AgentCatalog getAgentCatalog(String sessionId) {
+        AgentCatalog catalog = sessionIDCatalogMap.get(sessionId);
+        return catalog;
+    }
+
     public AgentInfo addAgent(String url , String sessionId){
         AgentCatalog catalog = sessionIDCatalogMap.get(sessionId);
         if (catalog == null) {
@@ -60,7 +65,7 @@ public class A2AConnections {
        AgentCatalog catalog = sessionIDCatalogMap.get(sessionId);
          if (catalog == null) {
               log.warning("No catalog found for session ID: " + sessionId);
-              return "Please add agent";
+              return "Please add agent using the Plus Icon on left side of the screen.";
          }
        return catalog.processQuery(query).getTextResult() ;
     }

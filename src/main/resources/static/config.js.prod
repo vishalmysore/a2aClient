@@ -1,0 +1,3 @@
+window.A2A_CONFIG = {
+  websocketUrl: "wss://vishalmysore-a2aclient.hf.space/agents"
+};

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="popular-servers/popular-servers.css">
     <meta charset="UTF-8" />
     <title>Agentic A2A Chat</title>
     <style>
@@ -11,6 +12,22 @@
           height: 100vh;
           background-color: #f5f2f7;
         }
+        .spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #ccc;
+  border-top: 3px solid #0b64f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .top-header {
   position: fixed;
   top: 0;
@@ -210,18 +227,32 @@
 </head>
 <body>
 <header class="top-header">
-    🌐 Online A2A Client built with&nbsp; <span> - </span>&nbsp;
-    <a href="https://github.com/vishalmysore/a2ajava" target="_blank" style="color: #0b64f1; text-decoration: none;"><strong>a2ajava</strong></a>
-
+    🌐 Online A2A Client built with&nbsp;
+    <a href="https://github.com/vishalmysore/a2ajava" target="_blank"
+       style="color: #0b64f1; text-decoration: none;"><strong>a2ajava</strong></a>
+    &nbsp;<span id="user-count">(0 users online)</span>&nbsp;|&nbsp;
+    <span id="agent-count">(Add Agents to Get Started)</span>
 </header>
+
 <div class="sidebar">
-    <button onclick="showSection('conversation')">💬</button>
-    <button onclick="addAgent()">➕</button>
-    <button onclick="listAgents()">📋</button>
+    <button onclick="showSection('conversation')" title="Start chatting">💬</button>
+    <button onclick="addAgent()" title="Add Tools or Agents">➕</button>
+    <button onclick="listAgents()" title="List Agents">📋</button>
+    <button onclick="openPopularServersPopup()" title="Popular Public Agents">🌐</button>
+    <button onclick="window.location.href='mesh/mesh-creator.html'" title="Create a Mesh of Agents">🧱</button>
     <button onclick="window.open('https://www.linkedin.com/pulse/complete-ai-agent-tutorial-a2a-mcp-protocol-4-different-vishal-mysore-l1cjc/', '_blank')" title="Agent Catalog">📚</button>
     <button onclick="window.open('https://medium.com/@visrow/what-is-agentic-mesh-how-to-build-one-66c88c926e3a', '_blank')" title="Agentic Mesh">🕸️</button>
     <button onclick="window.open('https://medium.com/@visrow/agentic-rag-mcp-ingestion-agent-583d0f948b6e', '_blank')" title="Agentic RAG">🤖</button>
 </div>
+<div id="popular-servers-container"></div>
+<script>
+    fetch("popular-servers/popular-servers.html")
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById("popular-servers-container").innerHTML = html;
+      });
+</script>
+<script src="popular-servers/popular-servers.js"></script>
 
 <div class="content">
     <div class="header">🧠 Conversation</div>
@@ -231,6 +262,9 @@
             <input type="text" id="user-input" placeholder="How can I help you?" onkeydown="handleKey(event)" />
             <button onclick="sendMessage()">▶</button>
         </div>
+    </div>
+    <div id="loading-spinner" style="display: none; margin-top: 10px;">
+        <span class="spinner"></span> <span>Waiting for agent...</span>
     </div>
 </div>
 
@@ -259,49 +293,65 @@
         <button onclick="closeAddAgentPopup()">Cancel</button>
     </div>
 </div>
-
+<script src="config.js"></script>
+<script src="sse-common.js"></script>
 <script>
-    const chatBox = document.getElementById("chat-box");
-    const agentPopup = document.getElementById("agent-popup");
-    const agentList = document.getElementById("agent-list");
-    const popupOverlay = document.getElementById("popup-overlay");
-    const addAgentPopup = document.getElementById("add-agent-popup");
+    document.addEventListener("DOMContentLoaded", function () {
+        if (!window.SSE_SOURCE) return;
 
-    const socket = new WebSocket("ws://localhost:7860/websocket");
+        window.SSE_SOURCE.addEventListener("users", function (event) {
+            const userCount = event.data;
+            const el = document.getElementById("user-count");
+            if (el) el.textContent = `(${userCount} users online)`;
+        });
+    });
 
-    socket.onopen = () => {
-      appendMessage("🔌 Connected to server.");
-    };
+        const chatBox = document.getElementById("chat-box");
+        const agentPopup = document.getElementById("agent-popup");
+        const agentList = document.getElementById("agent-list");
+        const popupOverlay = document.getElementById("popup-overlay");
+        const addAgentPopup = document.getElementById("add-agent-popup");
 
-    socket.onmessage = (event) => {
-      if (agentPopup.style.display === "block" && event.data.startsWith("Agent: ")) {
-        addAgentToList(event.data.substring(7));
+          const socket = new WebSocket(window.A2A_CONFIG.websocketUrl);
+
+        socket.onopen = () => {
+          appendMessage("🔌 Connected to server.");
+        };
+
+        socket.onmessage = (event) => {
+         document.getElementById("loading-spinner").style.display = "none";
+          if (agentPopup.style.display === "block" && event.data.startsWith("AgentList: ")) {
+            addAgentToList(event.data.substring(10));
+            return;
+          } if (event.data.startsWith("NumberOfAgents: ")) {
+        const count = event.data.split(": ")[1];
+        document.getElementById("agent-count").textContent = `(${count} agents available)`;
         return;
       }
-      appendMessage("🤖 " + event.data);
-    };
+          appendMessage("🤖 " + event.data);
+        };
 
-    socket.onclose = () => {
-      appendMessage("❌ Disconnected from server.");
-    };
-function addNewline() {
-  const div = document.createElement("div");
-  div.appendChild(document.createElement("br"));
-  chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-function handleKey(event) {
-  if (event.key === 'Enter') {
-    event.preventDefault(); // Prevent form submission or default behavior if any
-    sendMessage();
-  }
-}
-    function appendMessage(message) {
+        socket.onclose = () => {
+          appendMessage("❌ Disconnected from server.");
+        };
+    function addNewline() {
       const div = document.createElement("div");
-      div.textContent = message;
+      div.appendChild(document.createElement("br"));
       chatBox.appendChild(div);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
+    function handleKey(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault(); // Prevent form submission or default behavior if any
+        sendMessage();
+      }
+    }
+        function appendMessage(message) {
+          const div = document.createElement("div");
+          div.textContent = message;
+          chatBox.appendChild(div);
+          chatBox.scrollTop = chatBox.scrollHeight;
+        }
 
     function sendMessage() {
       const input = document.getElementById("user-input");
@@ -312,63 +362,67 @@ function handleKey(event) {
           query: message
         };
         socket.send(JSON.stringify(payload));
+
         addNewline();
         appendMessage("\n📤 " + message);
         input.value = "";
+
+        // Show loading spinner
+        document.getElementById("loading-spinner").style.display = "block";
       }
     }
 
-    function addAgent() {
-      addAgentPopup.style.display = "flex";
-      document.getElementById("agent-url-input").value = "";
-    }
+        function addAgent() {
+          addAgentPopup.style.display = "flex";
+          document.getElementById("agent-url-input").value = "";
+        }
 
-    function submitAgentUrl() {
-      const url = document.getElementById("agent-url-input").value.trim();
-      if (url && (url.startsWith("http://") || url.startsWith("https://"))) {
-        const payload = {
-          action: "addAgent",
-          url: url
-        };
-        socket.send(JSON.stringify(payload));
-        appendMessage("📡 Add agent request sent: " + url);
-        closeAddAgentPopup();
-      } else {
-        alert("Please enter a valid full URL starting with http or https.");
-      }
-    }
+        function submitAgentUrl() {
+          const url = document.getElementById("agent-url-input").value.trim();
+          if (url && (url.startsWith("http://") || url.startsWith("https://"))) {
+            const payload = {
+              action: "addAgent",
+              url: url
+            };
+            socket.send(JSON.stringify(payload));
+            appendMessage("📡 Add agent request sent: " + url);
+            closeAddAgentPopup();
+          } else {
+            alert("Please enter a valid full URL starting with http or https.");
+          }
+        }
 
-    function closeAddAgentPopup() {
-      addAgentPopup.style.display = "none";
-    }
+        function closeAddAgentPopup() {
+          addAgentPopup.style.display = "none";
+        }
 
-    function listAgents() {
-      if (socket.readyState !== WebSocket.OPEN) {
-        alert("WebSocket is not connected.");
-        return;
-      }
-      agentList.innerHTML = "";
-      agentPopup.style.display = "block";
-      popupOverlay.style.display = "block";
-      const payload = { action: "listAgents" };
-      socket.send(JSON.stringify(payload));
-    }
+        function listAgents() {
+          if (socket.readyState !== WebSocket.OPEN) {
+            alert("WebSocket is not connected.");
+            return;
+          }
+          agentList.innerHTML = "";
+          agentPopup.style.display = "block";
+          popupOverlay.style.display = "block";
+          const payload = { action: "listAgents" };
+          socket.send(JSON.stringify(payload));
+        }
 
-    function addAgentToList(agentInfo) {
-      const li = document.createElement("li");
-      li.textContent = agentInfo;
-      agentList.appendChild(li);
-    }
+        function addAgentToList(agentInfo) {
+          const li = document.createElement("li");
+          li.textContent = agentInfo;
+          agentList.appendChild(li);
+        }
 
-    function closeAgentPopup() {
-      agentPopup.style.display = "none";
-      popupOverlay.style.display = "none";
-      agentList.innerHTML = "";
-    }
+        function closeAgentPopup() {
+          agentPopup.style.display = "none";
+          popupOverlay.style.display = "none";
+          agentList.innerHTML = "";
+        }
 
-    function showSection(name) {
-      document.getElementById("conversation-section").classList.remove("hidden");
-    }
+        function showSection(name) {
+          document.getElementById("conversation-section").classList.remove("hidden");
+        }
 </script>
 <footer class="footer">
     <a href="https://www.linkedin.com/in/vishalrow/" target="_blank" title="LinkedIn">🔗</a>
