@@ -239,7 +239,7 @@
     <button onclick="addAgent()" title="Add Tools or Agents">➕</button>
     <button onclick="listAgents()" title="List Agents">📋</button>
     <button onclick="openPopularServersPopup()" title="Popular Public Agents">🌐</button>
-    <button onclick="window.location.href='mesh/mesh-creator.html'" title="Create a Mesh of Agents">🧱</button>
+    <button onclick="toggleMesh()" title="Create a Mesh of Agents">🧱</button>
     <button onclick="window.open('https://www.linkedin.com/pulse/complete-ai-agent-tutorial-a2a-mcp-protocol-4-different-vishal-mysore-l1cjc/', '_blank')" title="Agent Catalog">📚</button>
     <button onclick="window.open('https://medium.com/@visrow/what-is-agentic-mesh-how-to-build-one-66c88c926e3a', '_blank')" title="Agentic Mesh">🕸️</button>
     <button onclick="window.open('https://medium.com/@visrow/agentic-rag-mcp-ingestion-agent-583d0f948b6e', '_blank')" title="Agentic RAG">🤖</button>
@@ -252,6 +252,21 @@
         document.getElementById("popular-servers-container").innerHTML = html;
       });
 </script>
+<script>
+    function toggleMesh() {
+      const meshContainer = document.getElementById("mesh-container");
+      const meshFrame = document.getElementById("mesh-frame");
+
+      if (meshContainer.classList.contains("hidden")) {
+        meshContainer.classList.remove("hidden");
+        if (!meshFrame.src) {
+          meshFrame.src = "mesh/mesh-creator.html";
+        }
+      } else {
+        meshContainer.classList.add("hidden");
+      }
+    }
+</script>
 <script src="popular-servers/popular-servers.js"></script>
 
 <div class="content">
@@ -262,6 +277,9 @@
             <input type="text" id="user-input" placeholder="How can I help you?" onkeydown="handleKey(event)" />
             <button onclick="sendMessage()">▶</button>
         </div>
+    </div>
+    <div id="mesh-container" class="hidden" style="flex: 1; margin-top: 20px; border: 1px solid #ccc;">
+        <iframe src="mesh/mesh-creator.html" id="mesh-frame" style="width: 100%; height: 600px; border: none;"></iframe>
     </div>
     <div id="loading-spinner" style="display: none; margin-top: 10px;">
         <span class="spinner"></span> <span>Waiting for agent...</span>

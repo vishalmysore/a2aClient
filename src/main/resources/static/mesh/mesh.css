@@ -1,0 +1,13 @@
+.agent-list-item {
+  padding: 5px 10px;
+  border: 1px solid #0b64f1;
+  margin: 5px;
+  border-radius: 4px;
+  background: #e0f0ff;
+  cursor: grab;
+  width: 180px;
+}
+
+.agent {
+  user-select: none;
+}

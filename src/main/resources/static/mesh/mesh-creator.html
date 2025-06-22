@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+    <link rel="stylesheet" href="mesh.css">
     <meta charset="UTF-8" />
     <title>Create Agent Mesh</title>
-    <link rel="stylesheet" href="mesh-creator.css" />
+
     <style>
         body {
           font-family: Arial, sans-serif;
@@ -11,27 +13,38 @@
           padding: 20px;
           background: #f9f9f9;
         }
+
+        h2 {
+          margin-top: 0;
+        }
+
         .agent {
           padding: 10px;
-          margin: 10px;
+          margin: 10px 0;
           background: #d0e8ff;
           border: 1px solid #0b64f1;
           border-radius: 5px;
           cursor: move;
           width: 200px;
         }
+
+        #agent-list-container {
+          margin-bottom: 20px;
+        }
+
         .canvas {
-          margin-top: 20px;
           min-height: 400px;
           border: 2px dashed #aaa;
           padding: 20px;
+          background: #fff;
         }
     </style>
 </head>
 <body>
 
-<h2>Create a Mesh of Agents</h2>
-<div id="agent-list-container"></div>
+<h2>Create a Mesh of Agents (Work in progress)</h2>
+
+<div id="agent-list-container">Loading agents...</div>
 <div class="canvas" id="mesh-canvas">Drop agents here to build your mesh</div>
 
 <script src="mesh-creator.js"></script>
