@@ -285,7 +285,10 @@
         <span class="spinner"></span> <span>Waiting for agent...</span>
     </div>
 </div>
-
+<div id="mesh-popup" style="display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+     background: #0b64f1; color: white; padding: 12px 20px; border-radius: 6px; z-index: 999;">
+    🔗 Mesh is enabled. Agent response will flow through your custom mesh.
+</div>
 <!-- Overlays and Popups -->
 <div id="popup-overlay"></div>
 
@@ -371,24 +374,52 @@
           chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-    function sendMessage() {
-      const input = document.getElementById("user-input");
-      const message = input.value.trim();
-      if (message) {
-        const payload = {
-          action: "talkToAgent",
-          query: message
-        };
-        socket.send(JSON.stringify(payload));
+function sendMessage() {
+  const input = document.getElementById("user-input");
+  const message = input.value.trim();
 
-        addNewline();
-        appendMessage("\n📤 " + message);
-        input.value = "";
+  if (!message) return;
 
-        // Show loading spinner
-        document.getElementById("loading-spinner").style.display = "block";
+  const payload = {
+    action: "talkToAgent",
+    query: message
+  };
+
+  const meshContainer = document.getElementById("mesh-container");
+  const meshVisible = !meshContainer.classList.contains("hidden");
+
+  if (meshVisible) {
+    // ✅ Show popup (once per message)
+    //alert("🔗 Mesh is enabled. Agent response will flow through the mesh you created.");
+const popup = document.getElementById("mesh-popup");
+  popup.style.display = "block";
+  setTimeout(() => {
+    popup.style.display = "none";
+  }, 3000);
+    try {
+      const iframe = document.getElementById("mesh-frame");
+      const iframeWindow = iframe.contentWindow;
+
+      if (iframeWindow.getMeshData()) {
+        const meshData = iframeWindow.getMeshData();
+        payload.mesh = meshData;
+      } else {
+        console.warn("Drawflow editor not initialized.");
       }
+    } catch (err) {
+      console.error("Error accessing drawflow:", err);
     }
+  }
+
+  socket.send(JSON.stringify(payload));
+
+  addNewline();
+  appendMessage("\n📤 " + message);
+  input.value = "";
+
+  document.getElementById("loading-spinner").style.display = "block";
+}
+
 
         function addAgent() {
           addAgentPopup.style.display = "flex";

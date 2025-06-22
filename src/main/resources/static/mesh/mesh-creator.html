@@ -84,7 +84,10 @@
     const editor = new Drawflow(container);
     editor.reroute = true;
     editor.start();
-
+    window.editor = editor;
+    window.getMeshData = function() {
+    return editor.export();
+   };
     let currentDrag = null;
 
     // Render agents in catalog
