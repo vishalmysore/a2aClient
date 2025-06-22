@@ -22,6 +22,11 @@ Lightweight and Extensible: Designed for minimal overhead and maximum flexibilit
 - Lightweight and easy-to-use client.
 - Built with Java for cross-platform compatibility.
 
+## Binary 
+
+https://github.com/vishalmysore/a2aClient/releases/tag/local 
+run the jar with java -jar a2aClient-0.2.3.jar
+Connect to http://localhost:7860
 
 
 ### Setup Instructions
