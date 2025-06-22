@@ -1,52 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-    <link rel="stylesheet" href="mesh.css">
     <meta charset="UTF-8" />
-    <title>Create Agent Mesh</title>
+    <title>Create Agent Mesh with Drawflow</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/drawflow/dist/drawflow.min.css">
 
     <style>
-        body {
-          font-family: Arial, sans-serif;
+        html, body {
           margin: 0;
-          padding: 20px;
+          padding: 0;
+          height: 100%;
+          font-family: Arial, sans-serif;
           background: #f9f9f9;
         }
 
         h2 {
-          margin-top: 0;
+          margin: 10px 0;
+          padding: 10px;
+        }
+
+        #main {
+          display: flex;
+          height: calc(100vh - 40px); /* Adjusted for header */
+        }
+
+        #agent-list-container {
+          width: 250px;
+          padding: 10px;
+          border-right: 1px solid #ccc;
+          background: #fff;
+          overflow-y: auto;
         }
 
         .agent {
           padding: 10px;
-          margin: 10px 0;
+          margin-bottom: 10px;
           background: #d0e8ff;
           border: 1px solid #0b64f1;
           border-radius: 5px;
-          cursor: move;
-          width: 200px;
+          cursor: grab;
         }
 
-        #agent-list-container {
-          margin-bottom: 20px;
+        #drawflow-wrapper {
+          flex: 1;
+          overflow: auto;
+          background: #f0f0f0;
         }
 
-        .canvas {
-          min-height: 400px;
+        #drawflow {
+          width: 2000px;
+          height: 2000px;
           border: 2px dashed #aaa;
-          padding: 20px;
           background: #fff;
         }
     </style>
 </head>
 <body>
 
-<h2>Create a Mesh of Agents (Work in progress)</h2>
+<h2>Create a Mesh of Agents (Work In Progress)</h2>
 
-<div id="agent-list-container">Loading agents...</div>
-<div class="canvas" id="mesh-canvas">Drop agents here to build your mesh</div>
+<div id="main">
+    <div id="agent-list-container">Loading agents...</div>
+    <div id="drawflow-wrapper">
+        <div id="drawflow" class="drawflow"></div>
+    </div>
+</div>
 
-<script src="mesh-creator.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/drawflow"></script>
+<script>
+    const agentCatalog = {
+      "agent1": { "name": "Travel Booking" },
+      "agent2": { "name": "Car Servicing" },
+      "agent3": { "name": "Lawn Mower Repair" },
+      "agent4": { "name": "Flight Reservation" },
+      "agent5": { "name": "Hotel Booking" },
+      "agent6": { "name": "Laundry Pickup" },
+      "agent7": { "name": "Doctor Appointment" },
+      "agent8": { "name": "Food Delivery" }
+    };
+
+    const container = document.getElementById("drawflow");
+    const catalogContainer = document.getElementById("agent-list-container");
+    const editor = new Drawflow(container);
+    editor.reroute = true;
+    editor.start();
+
+    let currentDrag = null;
+
+    // Render agents in catalog
+    Object.entries(agentCatalog).forEach(([id, agent]) => {
+      const div = document.createElement("div");
+      div.className = "agent";
+      div.textContent = `${id}: ${agent.name}`;
+      div.draggable = true;
+
+      div.addEventListener("dragstart", (e) => {
+        currentDrag = {
+          id,
+          name: agent.name
+        };
+      });
+
+      catalogContainer.appendChild(div);
+    });
+
+    // Drag-over support
+    container.addEventListener("dragover", function (e) {
+      e.preventDefault();
+    });
+
+    // Drop to create node
+    container.addEventListener("drop", function (e) {
+      e.preventDefault();
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      if (currentDrag) {
+        editor.addNode(
+          "agent",
+          1, 1,
+          x, y,
+          "agent",
+          { label: currentDrag.name },
+          `<div><strong>${currentDrag.name}</strong></div>`
+        );
+        currentDrag = null;
+      }
+    });
+</script>
+
 </body>
 </html>
