@@ -1,7 +1,7 @@
 ## Online A2A Client built with WebSocket and Java
 
 ### Description
-This project is a google A2A (agent to agent) client implemented using WebSocket and Java. It facilitates real-time communication between agents by leveraging WebSocket.
+a2aClient is a google A2A (agent to agent) client implemented using WebSocket and Java. It facilitates real-time communication between agents by leveraging WebSocket.
 Also provides mechanism for agentic mesh and agentic rag and create complete worklow using a2a or mcp servers  
 
 [A2AJava](https://github.com/vishalmysore/a2ajava) is a pure Java implementation designed to support both the Google A2A (Agent-to-Agent) protocol and the MCP (Model Context Protocol), making it a versatile framework for building agentic applications. The A2A protocol standardizes how AI agents communicate and collaborate across different systems, while the MCP protocol focuses on enabling agents to access and trigger a wide range of tools and resources.
@@ -22,16 +22,10 @@ Lightweight and Extensible: Designed for minimal overhead and maximum flexibilit
 - Lightweight and easy-to-use client.
 - Built with Java for cross-platform compatibility.
 
-### Prerequisites
-- Java Development Kit (JDK) 11 or higher.
-- Maven (for dependency management and building the project).
+
 
 ### Setup Instructions
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-repo/a2a-client-simple.git
-   cd a2a-client-simple
-   ```
 
 2. Build the project using Maven:
    ```bash
@@ -40,30 +34,8 @@ Lightweight and Extensible: Designed for minimal overhead and maximum flexibilit
 
 3. Run the application:
    ```bash
-   java -jar target/a2a-client-simple.jar
+   java -jar target/a2aClient-0.2.3.jar
    ```
 
 ### Usage
-1. Configure the WebSocket server URL in the application properties file.
-2. Start the client and establish a connection to the WebSocket server.
-3. Send and receive messages in real-time.
-
-### Contributing
-Contributions are welcome! Please follow these steps:
-1. Fork the repository.
-2. Create a new branch for your feature or bug fix:
-   ```bash
-   git checkout -b feature-name
-   ```
-3. Commit your changes and push the branch:
-   ```bash
-   git commit -m "Add feature-name"
-   git push origin feature-name
-   ```
-4. Open a pull request describing your changes.
-
-### License
-This project is licensed under the MIT License. See the `LICENSE` file for details.
-
-### Contact
-For questions or support, please contact [your-email@example.com].
+Connect to http://localhost:7860
