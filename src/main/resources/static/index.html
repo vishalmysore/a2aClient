@@ -259,16 +259,52 @@
 
       if (meshContainer.classList.contains("hidden")) {
         meshContainer.classList.remove("hidden");
+
         if (!meshFrame.src) {
           meshFrame.src = "mesh/mesh-creator.html";
+
+          meshFrame.onload = () => {
+            requestSessionIdAndSendToIframe(meshFrame);
+          };
+        } else {
+          // iframe already loaded, just request and send session id
+          requestSessionIdAndSendToIframe(meshFrame);
         }
       } else {
         meshContainer.classList.add("hidden");
       }
     }
+
+    function requestSessionIdAndSendToIframe(meshFrame) {
+     const socket = window.socket; // assumes socket is already created & connected
+      // Assume you have your websocket object available as `socket`
+      socket.send(JSON.stringify({ action: "getSessionId" }));
+
+      // Listen for the response just once
+      function onMessage(event) {
+        try {
+          const msg = event.data;
+
+          if (typeof msg === "string" && msg.startsWith("SessionId: ")) {
+            const sessionId = msg.substring("SessionId: ".length);
+
+            // Send sessionId to iframe
+            meshFrame.contentWindow.postMessage({ action: "sessionIdResponse", sessionId }, "*");
+
+            // Remove listener to avoid memory leak
+            socket.removeEventListener("message", onMessage);
+          }
+        } catch (e) {
+          // ignore parse errors
+        }
+      }
+
+      socket.addEventListener("message", onMessage);
+    }
+
 </script>
 <script src="popular-servers/popular-servers.js"></script>
-
+<script src="utils.js"></script>
 <div class="content">
     <div class="header">🧠 Conversation</div>
     <div id="conversation-section">
@@ -333,8 +369,8 @@
         const popupOverlay = document.getElementById("popup-overlay");
         const addAgentPopup = document.getElementById("add-agent-popup");
 
-          const socket = new WebSocket(window.A2A_CONFIG.websocketUrl);
-
+          //const socket = new WebSocket(window.A2A_CONFIG.websocketUrl);
+        const socket = window.socket;
         socket.onopen = () => {
           appendMessage("🔌 Connected to server.");
         };
@@ -348,8 +384,12 @@
         const count = event.data.split(": ")[1];
         document.getElementById("agent-count").textContent = `(${count} agents available)`;
         return;
-      }
+      }  if (event.data.startsWith("SessionId: ")) {
+           console.log(event.data);
+       }
+       else{
           appendMessage("🤖 " + event.data);
+          }
         };
 
         socket.onclose = () => {
@@ -399,6 +439,7 @@ const popup = document.getElementById("mesh-popup");
     try {
       const iframe = document.getElementById("mesh-frame");
       const iframeWindow = iframe.contentWindow;
+
 
       if (iframeWindow.getMeshData()) {
         const meshData = iframeWindow.getMeshData();
@@ -457,11 +498,29 @@ const popup = document.getElementById("mesh-popup");
           socket.send(JSON.stringify(payload));
         }
 
-        function addAgentToList(agentInfo) {
-          const li = document.createElement("li");
-          li.textContent = agentInfo;
-          agentList.appendChild(li);
+             function addAgentToList(agentInfo) {
+                      console.log("Adding agent to list:", agentInfo);
+                      let parsed;
+                      try {
+                        parsed = typeof agentInfo === "string" ? JSON.parse(agentInfo) : agentInfo;
+                      } catch (e) {
+                        console.warn("Could not parse agent info:", agentInfo);
+                        const li = document.createElement("li");
+                        li.textContent = agentInfo;
+                        agentList.appendChild(li);
+                        return;
+                      }
+
+                      const li = document.createElement("li");
+
+                      // Recursively render the JSON into a table
+                      const table = renderJsonAsTable(parsed);
+                      li.appendChild(table);
+
+                      agentList.appendChild(li);
         }
+
+
 
         function closeAgentPopup() {
           agentPopup.style.display = "none";

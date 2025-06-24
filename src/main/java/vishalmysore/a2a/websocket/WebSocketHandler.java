@@ -10,6 +10,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import vishalmysore.a2a.A2AConnections;
+import vishalmysore.a2a.rest.AgenticMeshController;
 import vishalmysore.a2a.sse.SseController;
 
 import java.io.IOException;
@@ -24,6 +25,9 @@ public class WebSocketHandler extends TextWebSocketHandler {
     private SseController sseController;
     @Autowired
     private A2AConnections connections;
+
+    @Autowired
+    AgenticMeshController agenticMeshController;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -57,6 +61,13 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 session.sendMessage(new TextMessage("AgentList: " + agentInfo));
             }
 
+        } else if ("getSessionId".equals(action)) {
+
+            session.sendMessage(new TextMessage("SessionId: " + session.getId()));
+        } else if("agentCatalog".equals(action)) {
+            String cataLogid = root.path("catalogid").asText();
+           String json = agenticMeshController.getAgentCatalog(cataLogid);
+            session.sendMessage(new TextMessage("catalog: " + json));
         }
 
         else {

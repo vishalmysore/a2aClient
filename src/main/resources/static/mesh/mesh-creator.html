@@ -41,6 +41,13 @@
           cursor: grab;
         }
 
+          .modifier {
+            background-color: #e3f2fd; /* Light blue */
+            border: 1px solid #2196f3; /* Blue border */
+            color: #0d47a1; /* Dark blue text */
+            font-weight: bold;
+          }
+
         #drawflow-wrapper {
           flex: 1;
           overflow: auto;
@@ -57,7 +64,7 @@
 </head>
 <body>
 
-<h2>Create a Mesh of Agents (Work In Progress)</h2>
+<h2>Create a Mesh of Agents (Work In Progress) <button id="refresh-agents-btn" style="margin: 10px;">🔄 Refresh Agents</button></h2>
 
 <div id="main">
     <div id="agent-list-container">Loading agents...</div>
@@ -66,53 +73,126 @@
     </div>
 </div>
 
+<div id="agent-context-menu" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:10px; z-index:1000; box-shadow: 2px 2px 6px rgba(0,0,0,0.2); border-radius: 5px; font-family: sans-serif;"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/drawflow"></script>
+<script src="../config.js"></script>
+<script src="../sse-common.js"></script>
 <script>
-    const agentCatalog = {
-      "agent1": { "name": "Travel Booking" },
-      "agent2": { "name": "Car Servicing" },
-      "agent3": { "name": "Lawn Mower Repair" },
-      "agent4": { "name": "Flight Reservation" },
-      "agent5": { "name": "Hotel Booking" },
-      "agent6": { "name": "Laundry Pickup" },
-      "agent7": { "name": "Doctor Appointment" },
-      "agent8": { "name": "Food Delivery" }
-    };
+    let sessionId = null;
+
+// Listen for sessionId from parent window
+window.addEventListener("message", (event) => {
+  if (event.data?.action === "sessionIdResponse") {
+    sessionId = event.data.sessionId;
+    console.log("Received sessionId from parent:", sessionId);
+
+    // Once we have sessionId, load the agent catalog with it
+    loadAgentCatalog();
+  }
+});
+</script>
+<script>
+    const socket = window.socket; // assumes socket is already created & connected
 
     const container = document.getElementById("drawflow");
     const catalogContainer = document.getElementById("agent-list-container");
     const editor = new Drawflow(container);
     editor.reroute = true;
     editor.start();
+
     window.editor = editor;
-    window.getMeshData = function() {
-    return editor.export();
-   };
+    window.getMeshData = function () {
+      return editor.export();
+    };
+
     let currentDrag = null;
 
-    // Render agents in catalog
-    Object.entries(agentCatalog).forEach(([id, agent]) => {
-      const div = document.createElement("div");
-      div.className = "agent";
-      div.textContent = `${id}: ${agent.name}`;
-      div.draggable = true;
+    function renderAgentCatalog(agentCatalog) {
+      catalogContainer.innerHTML = ""; // clear existing
 
-      div.addEventListener("dragstart", (e) => {
+      Object.entries(agentCatalog).forEach(([id, agent]) => {
+        const div = document.createElement("div");
+        div.className = "agent";
+        div.textContent = `${id}: ${agent.name}`;
+        div.draggable = true;
+
+        div.dataset.description = agent.description || "";
+        div.dataset.version = agent.version || "";
+        div.dataset.author = agent.author || "";
+        div.dataset.id = id;
+
+        div.addEventListener("dragstart", () => {
+          currentDrag = {
+            id,
+            name: agent.name,
+            type: "agent"
+          };
+        });
+
+        div.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          showAgentContextMenu(e.pageX, e.pageY, agent);
+        });
+
+        catalogContainer.appendChild(div);
+      });
+
+      // Add Modifier block
+      const modifierDiv = document.createElement("div");
+      modifierDiv.classList.add("agent", "modifier");
+      modifierDiv.textContent = "modifier: Modifier";
+      modifierDiv.draggable = true;
+
+      modifierDiv.addEventListener("dragstart", () => {
         currentDrag = {
-          id,
-          name: agent.name
+          id: "modifier",
+          name: "Modifier",
+          type: "modifier"
         };
       });
 
-      catalogContainer.appendChild(div);
-    });
+      catalogContainer.appendChild(modifierDiv);
+    }
 
-    // Drag-over support
+function loadAgentCatalog() {
+  if (!sessionId) {
+    console.error("Session ID not yet received. Cannot load catalog.");
+    return;
+  }
+
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ action: "agentCatalog", catalogid: sessionId }));
+  } else {
+    console.error("Socket not open, cannot load agent catalog.");
+  }
+}
+
+
+    // Handle messages from WebSocket
+    socket.onmessage = function (event) {
+      const data = event.data;
+
+      if (data.startsWith("catalog: ")) {
+        const jsonStr = data.substring("catalog: ".length);
+        let agentCatalog;
+        try {
+          agentCatalog = JSON.parse(jsonStr);
+        } catch (e) {
+          console.error("Failed to parse agent catalog JSON", e);
+          return;
+        }
+        renderAgentCatalog(agentCatalog);
+      }
+      // Add other message handling here, e.g. for "AgentAdded", "AgentList" etc.
+    };
+
+    // Drag-over support to allow dropping
     container.addEventListener("dragover", function (e) {
       e.preventDefault();
     });
 
-    // Drop to create node
+    // Drop handler to add node to Drawflow editor
     container.addEventListener("drop", function (e) {
       e.preventDefault();
       const rect = container.getBoundingClientRect();
@@ -120,18 +200,64 @@
       const y = e.clientY - rect.top;
 
       if (currentDrag) {
-        editor.addNode(
-          "agent",
-          1, 1,
-          x, y,
-          "agent",
-          { label: currentDrag.name },
-          `<div><strong>${currentDrag.name}</strong></div>`
-        );
+        if (currentDrag.type === "modifier") {
+          editor.addNode(
+            "modifier",
+            1, 1,
+            x, y,
+            "modifier",
+            { template: "" },
+            `<div>
+              <strong>🛠 Modifier</strong><br>
+              <label>Modify Vars</label><br>
+              <textarea rows="4" style="width: 100%;" placeholder="Enter logic here"></textarea><br>
+              <small>Applies transformation</small>
+            </div>`
+          );
+        } else {
+          editor.addNode(
+            "agent",
+            1, 1,
+            x, y,
+            "agent",
+            { label: currentDrag.name },
+            `<div><strong>${currentDrag.name}</strong></div>`
+          );
+        }
         currentDrag = null;
       }
     });
+
+    // Context menu for agents
+    function showAgentContextMenu(x, y, agent) {
+      const menu = document.getElementById("agent-context-menu");
+      if (!menu) return;
+
+      menu.style.left = `${x}px`;
+      menu.style.top = `${y}px`;
+      menu.innerHTML = `
+        <strong>${agent.name}</strong><br>
+        <small><em>${agent.description || "No description available."}</em></small><br><br>
+        <b>Version:</b> ${agent.version || "N/A"}<br>
+        <b>Author:</b> ${agent.author || "N/A"}
+      `;
+      menu.style.display = "block";
+    }
+
+    // Hide context menu on clicking elsewhere
+    document.addEventListener("click", () => {
+      const menu = document.getElementById("agent-context-menu");
+      if (menu) menu.style.display = "none";
+    });
+
+    // Refresh button triggers reload of catalog
+    document.getElementById("refresh-agents-btn").addEventListener("click", loadAgentCatalog);
+
+    // Initial load
+    loadAgentCatalog();
 </script>
 
+
 </body>
+
 </html>
